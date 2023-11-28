@@ -29,20 +29,20 @@ namespace dcsam {
  */
 template <class ContinuousFactorType>
 class ContinuousMaxMixtureFactor : public gtsam::NonlinearFactor {
- private:
+private:
   std::vector<ContinuousFactorType> factors_;
   std::vector<double> log_weights_;
   bool normalized_;
 
- public:
+public:
   using Base = gtsam::NonlinearFactor;
 
   ContinuousMaxMixtureFactor() = default;
 
-  explicit ContinuousMaxMixtureFactor(const gtsam::KeyVector& continuousKeys,
-                              const std::vector<ContinuousFactorType> factors,
-                              const std::vector<double> weights,
-                              const bool normalized)
+  explicit ContinuousMaxMixtureFactor(
+      const gtsam::KeyVector &continuousKeys,
+      const std::vector<ContinuousFactorType> factors,
+      const std::vector<double> weights, const bool normalized)
       : Base(continuousKeys), normalized_(normalized) {
     factors_ = factors;
     for (size_t i = 0; i < weights.size(); i++) {
@@ -50,9 +50,9 @@ class ContinuousMaxMixtureFactor : public gtsam::NonlinearFactor {
     }
   }
 
-  explicit ContinuousMaxMixtureFactor(const gtsam::KeyVector& continuousKeys,
-                              const std::vector<ContinuousFactorType> factors,
-                              const bool normalized)
+  explicit ContinuousMaxMixtureFactor(
+      const gtsam::KeyVector &continuousKeys,
+      const std::vector<ContinuousFactorType> factors, const bool normalized)
       : Base(continuousKeys), normalized_(normalized) {
     factors_ = factors;
     for (size_t i = 0; i < factors_.size(); i++) {
@@ -60,7 +60,7 @@ class ContinuousMaxMixtureFactor : public gtsam::NonlinearFactor {
     }
   }
 
-  ContinuousMaxMixtureFactor& operator=(const ContinuousMaxMixtureFactor& rhs) {
+  ContinuousMaxMixtureFactor &operator=(const ContinuousMaxMixtureFactor &rhs) {
     this->factors_ = rhs.factors_;
     this->log_weights_ = rhs.log_weights_;
     this->normalized_ = rhs.normalized_;
@@ -68,24 +68,23 @@ class ContinuousMaxMixtureFactor : public gtsam::NonlinearFactor {
 
   virtual ~ContinuousMaxMixtureFactor() = default;
 
-  double error(const gtsam::Values& continuousVals) const override {
+  double error(const gtsam::Values &continuousVals) const override {
     size_t min_error_idx = getActiveFactorIdx(continuousVals);
     assert(0 <= min_error_idx);
     assert(min_error_idx < factors_.size());
-    double min_error =
-        factors_[min_error_idx].error(continuousVals);
-    if (normalized_) return min_error - log_weights_[min_error_idx];
+    double min_error = factors_[min_error_idx].error(continuousVals);
+    if (normalized_)
+      return min_error - log_weights_[min_error_idx];
     return min_error +
            factors_[min_error_idx].logNormalizingConstant(continuousVals) -
            log_weights_[min_error_idx];
   }
 
-  size_t getActiveFactorIdx(const gtsam::Values& continuousVals) const {
+  size_t getActiveFactorIdx(const gtsam::Values &continuousVals) const {
     double min_error = std::numeric_limits<double>::infinity();
     size_t min_error_idx = 0;
     for (size_t i = 0; i < factors_.size(); i++) {
-      double error =
-          factors_[i].error(continuousVals) - log_weights_[i];
+      double error = factors_[i].error(continuousVals) - log_weights_[i];
       if (!normalized_)
         error += factors_[i].logNormalizingConstant(continuousVals);
 
@@ -105,30 +104,34 @@ class ContinuousMaxMixtureFactor : public gtsam::NonlinearFactor {
     }
   }
 
-  bool equals(const gtsam::NonlinearFactor& other, double tol = 1e-9) const override {
-    if (!dynamic_cast<const ContinuousMaxMixtureFactor*>(&other)) return false;
-    const ContinuousMaxMixtureFactor& f(static_cast<const ContinuousMaxMixtureFactor&>(other));
-    if (factors_.size() != f.factors_.size()) return false;
+  bool equals(const gtsam::NonlinearFactor &other,
+              double tol = 1e-9) const override {
+    if (!dynamic_cast<const ContinuousMaxMixtureFactor *>(&other))
+      return false;
+    const ContinuousMaxMixtureFactor &f(
+        static_cast<const ContinuousMaxMixtureFactor &>(other));
+    if (factors_.size() != f.factors_.size())
+      return false;
     for (size_t i = 0; i < factors_.size(); i++) {
-      if (!factors_[i].equals(f.factors_[i])) return false;
+      if (!factors_[i].equals(f.factors_[i]))
+        return false;
     }
     return ((log_weights_ == f.log_weights_) && (normalized_ == f.normalized_));
   }
 
-  boost::shared_ptr<gtsam::GaussianFactor> linearize(
-      const gtsam::Values& continuousVals) const override {
+  boost::shared_ptr<gtsam::GaussianFactor>
+  linearize(const gtsam::Values &continuousVals) const override {
     size_t min_error_idx = getActiveFactorIdx(continuousVals);
     return factors_[min_error_idx].linearize(continuousVals);
   }
 
-
-  gtsam::FastVector<gtsam::Key> getAssociationKeys(
-      const gtsam::Values& continuousVals) const {
+  gtsam::FastVector<gtsam::Key>
+  getAssociationKeys(const gtsam::Values &continuousVals) const {
     size_t min_error_idx = getActiveFactorIdx(continuousVals);
     return factors_[min_error_idx].keys();
   }
 
-  void updateWeights(const std::vector<double>& weights) {
+  void updateWeights(const std::vector<double> &weights) {
     if (weights.size() != log_weights_.size()) {
       std::cerr << "Attempted to update weights with incorrectly sized vector."
                 << std::endl;
@@ -139,4 +142,4 @@ class ContinuousMaxMixtureFactor : public gtsam::NonlinearFactor {
     }
   }
 };
-}  // namespace dcsam
+} // namespace dcsam
